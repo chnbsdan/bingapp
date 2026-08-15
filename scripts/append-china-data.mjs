@@ -33,27 +33,22 @@ async function main() {
         const dateStr = newData.startdate;
         console.log(`📥 中国区日期: ${dateStr}`);
 
-        // 读取现有数据
         let existingData = [];
         if (fs.existsSync(dataFilePath)) {
             const content = fs.readFileSync(dataFilePath, 'utf-8');
             existingData = JSON.parse(content);
             if (!Array.isArray(existingData)) {
-                console.error('❌ data.json 不是数组格式，请检查文件');
+                console.error('❌ data.json 不是数组格式');
                 process.exit(1);
             }
             console.log(`📂 现有 ${existingData.length} 条记录`);
-        } else {
-            console.log('📂 data.json 不存在，创建新文件');
         }
 
-        // 检查是否已存在
         if (existingData.some(item => item.startdate === dateStr)) {
             console.log(`⏭️ ${dateStr} 已存在，跳过`);
             process.exit(0);
         }
 
-        // 追加并排序
         existingData.push(newData);
         existingData.sort((a, b) => b.startdate.localeCompare(a.startdate));
 
