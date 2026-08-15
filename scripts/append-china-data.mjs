@@ -19,21 +19,6 @@ async function fetchChinaData() {
     }
 
     const allData = await response.json();
-    console.log(`📊 API返回 ${allData.length} 条数据`);
-
-    // 打印第一条完整数据结构，查看所有字段
-    if (allData.length > 0) {
-        console.log('📋 第一条数据结构:', JSON.stringify(allData[0], null, 2));
-    }
-
-    // 遍历打印所有数据的 lang 和日期字段
-    allData.forEach((item, index) => {
-        // 尝试找出日期字段 - 可能是 date, startdate, enddate, 或其他
-        const dateFields = Object.keys(item).filter(key => 
-            key.includes('date') || key.includes('Date') || key === 'startdate' || key === 'enddate'
-        );
-        console.log(`  [${index}] lang: ${item.lang}, 日期字段: ${dateFields.join(', ')}, 值: ${dateFields.map(f => item[f]).join(', ')}`);
-    });
 
     // 通过 lang 字段查找中国区数据
     const chinaData = allData.find(item => item.lang === 'zh-CN');
@@ -43,7 +28,6 @@ async function fetchChinaData() {
         return null;
     }
 
-    console.log('✅ 找到中国区数据，完整内容:', JSON.stringify(chinaData, null, 2));
     return chinaData;
 }
 
@@ -57,25 +41,19 @@ async function main() {
             process.exit(0);
         }
 
-        // 找出正确的日期字段
-        const dateKeys = Object.keys(newData).filter(key => 
-            key.includes('date') || key.includes('Date') || key === 'startdate' || key === 'enddate'
-        );
-        
-        let startdate = newData.startdate || newData.date || newData.enddate;
-        // 如果日期是 Date 对象，转换为字符串
-        if (startdate instanceof Date) {
-            startdate = startdate.toISOString().slice(0, 10).replace(/-/g, '');
-        }
-
-        console.log(`📥 获取到中国区数据，日期字段: ${dateKeys.join(', ')}, 值: ${startdate}`);
-
-        // 如果还是没有日期，使用当前日期
-        if (!startdate) {
+        // ========== 关键修改：将日期转换为 YYYYMMDD 格式 ==========
+        let dateStr = newData.date;
+        if (dateStr) {
+            // 移除连字符: 2026-08-15 -> 20260815
+            dateStr = dateStr.replace(/-/g, '');
+        } else {
+            // 如果没有日期，使用当前日期
             const now = new Date();
-            startdate = now.toISOString().slice(0, 10).replace(/-/g, '');
-            console.log(`⚠️ 未找到日期字段，使用当前日期: ${startdate}`);
+            dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+            console.log(`⚠️ 未找到日期字段，使用当前日期: ${dateStr}`);
         }
+
+        console.log(`📥 中国区日期: ${dateStr}`);
 
         // 读取现有 data.json
         let existingData = {};
@@ -83,19 +61,32 @@ async function main() {
             const content = fs.readFileSync(dataFilePath, 'utf-8');
             existingData = JSON.parse(content);
             console.log(`📂 现有数据包含 ${Object.keys(existingData).length} 天`);
+            
+            // 打印前5个键，确认格式
+            const keys = Object.keys(existingData).slice(0, 5);
+            console.log(`📋 现有数据键示例: ${keys.join(', ')}`);
         } else {
             console.log('📂 data.json 不存在，将创建新文件');
         }
 
-        // 检查是否已存在
-        if (existingData[startdate]) {
-            console.log(`⏭️ ${startdate} 已存在，跳过`);
+        // ========== 关键修改：用 YYYYMMDD 格式检查是否已存在 ==========
+        if (existingData[dateStr]) {
+            console.log(`⏭️ ${dateStr} 已存在，跳过`);
             process.exit(0);
         }
 
+        // 构建要保存的数据（移除 date 字段，添加 startdate）
+        const dataToSave = {
+            startdate: dateStr,
+            urlbase: newData.url,
+            title: newData.title,
+            copyright: newData.copyright,
+            copyrightlink: newData.copyrightlink,
+        };
+
         // 追加新数据
-        existingData[startdate] = newData;
-        console.log(`✅ 新增: ${startdate}`);
+        existingData[dateStr] = dataToSave;
+        console.log(`✅ 新增: ${dateStr}`);
 
         // 按日期排序（最新的在前）
         const sortedData = Object.keys(existingData)
