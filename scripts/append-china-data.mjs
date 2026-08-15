@@ -19,17 +19,22 @@ async function fetchChinaData() {
     }
 
     const allData = await response.json();
+    console.log(`📊 API返回 ${allData.length} 条数据`);
 
-    // 找到中国区数据（根据 urlbase 包含 _ZH-CN 判断）
-    const chinaData = allData.find(item =>
-        item.urlbase && item.urlbase.includes('_ZH-CN')
-    );
+    // 打印所有数据的关键信息，方便调试
+    allData.forEach((item, index) => {
+        console.log(`  [${index}] lang: ${item.lang}, startdate: ${item.startdate}, title: ${item.title?.substring(0, 10)}...`);
+    });
+
+    // 修改：通过 lang 字段查找中国区数据
+    const chinaData = allData.find(item => item.lang === 'zh-CN');
 
     if (!chinaData) {
-        console.log('⚠️ 未找到中国区数据，跳过');
+        console.log('⚠️ 未找到中国区数据 (lang=zh-CN)');
         return null;
     }
 
+    console.log(`✅ 找到中国区数据: ${chinaData.startdate}`);
     return chinaData;
 }
 
