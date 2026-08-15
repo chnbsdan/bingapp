@@ -81,14 +81,30 @@ async function main() {
         // ========== 同步更新 public/data/data.json ==========
         let publicData = [];
         if (fs.existsSync(publicDataPath)) {
-            const content = fs.readFileSync(publicDataPath, 'utf-8');
-            publicData = JSON.parse(content);
-            if (!Array.isArray(publicData)) {
+            try {
+                const content = fs.readFileSync(publicDataPath, 'utf-8');
+                publicData = JSON.parse(content);
+                if (!Array.isArray(publicData)) {
+                    console.log('⚠️ public/data/data.json 不是数组，重新创建');
+                    publicData = [];
+                } else {
+                    console.log(`📂 public 现有 ${publicData.length} 条`);
+                }
+            } catch (e) {
+                console.log(`⚠️ 读取 public/data/data.json 失败: ${e.message}`);
                 publicData = [];
             }
-            console.log(`📂 public 现有 ${publicData.length} 条`);
+        } else {
+            console.log('📂 public/data/data.json 不存在，将创建');
         }
 
+        // 如果 archive 有数据但 public 为空，从 archive 同步
+        if (publicData.length === 0 && archiveData.length > 0) {
+            console.log(`📂 从 archive 同步 ${archiveData.length} 条到 public`);
+            publicData = JSON.parse(JSON.stringify(archiveData));
+        }
+
+        // 检查是否已存在
         if (!publicData.some(item => item.startdate === dateStr)) {
             publicData.push(newData);
             publicData.sort((a, b) => b.startdate.localeCompare(a.startdate));
@@ -98,7 +114,7 @@ async function main() {
             console.log(`⏭️ public/data/data.json 中 ${dateStr} 已存在`);
         }
 
-        console.log(`📊 完成！共 ${archiveData.length} 条记录`);
+        console.log(`📊 完成！archive: ${archiveData.length} 条, public: ${publicData.length} 条`);
 
     } catch (error) {
         console.error('❌ 更新失败:', error);
