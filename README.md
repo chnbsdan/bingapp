@@ -1,4 +1,4 @@
-# Bing Wallpaper Archive
+# Bing Wallpaper Archive生试部署
 > 一个基于 Nuxt3 + Vercel + GitHub Actions 的**全自动壁纸展示**
 
 ---
