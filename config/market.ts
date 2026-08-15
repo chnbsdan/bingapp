@@ -10,7 +10,7 @@ export type Market =
   | 'it-IT'
   | 'ja-JP'
   | 'zh-CN'
-  | 'zh-CN-history'  // 新增：中国区汇总
+  | 'ko-KR'  // 新增韩国
 
 interface MarketConfig {
   lang: Market
@@ -114,16 +114,16 @@ export const markets: MarketConfig[] = [
     keywords: '壁纸, 壁纸下载, 壁纸免费下载, 必应壁纸, 必应壁纸下载, 必应壁纸免费下载, 4k 壁纸, 4k 壁纸下载, 4k 壁纸免费下载, 高清壁纸, 高清壁纸下载, 高清壁纸免费下载',
     startDate: '2016-03-05 00:00:00',
   },
-  // ========== 新增：中国区汇总 ==========
+  // ========== 新增：韩国 ==========
   {
-    lang: 'zh-CN-history',
-    flag: '📚',
-    name: '中国区汇总',
-    offset: +8 * 60,
-    title: '中国区壁纸汇总',
-    description: '2010年至今全部中国区壁纸',
-    keywords: '中国区壁纸, 历史壁纸, 必应壁纸汇总, 必应壁纸历史',
-    startDate: '2010-12-30 00:00:00',
+    lang: 'ko-KR',
+    flag: '🇰🇷',
+    name: '한국어',
+    offset: +9 * 60,
+    title: '빙 배경 화면',
+    description: '한 번에 한 장씩 세계를 탐험하세요',
+    keywords: '배경 화면, 배경 화면 다운로드, 무료 배경 화면 다운로드, 빙 배경 화면, 빙 배경 화면 다운로드, 무료 빙 배경 화면 다운로드, 4k 배경 화면, 4k 배경 화면 다운로드, 무료 4k 배경 화면 다운로드, HD 배경 화면, HD 배경 화면 다운로드, 무료 HD 배경 화면 다운로드',
+    startDate: '2022-04-28 00:00:00',
   },
 ]
 
