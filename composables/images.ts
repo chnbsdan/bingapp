@@ -47,13 +47,19 @@ function buildImageUrl(item: any): string {
 
 // ========== 转换历史数据 ==========
 function transformHistoryItem(item: any): BingImageMeta {
+    // 处理日期：startdate 是 YYYYMMDD 格式
     let date = item.startdate || '';
-    if (date && date.length === 8) {
+    // 如果已经是 YYYY-MM-DD 格式，直接使用
+    if (date.includes('-')) {
+        // 已经是正确格式
+    } else if (date.length === 8) {
+        // YYYYMMDD -> YYYY-MM-DD
         date = `${date.slice(0, 4)}-${date.slice(4, 6)}-${date.slice(6, 8)}`;
+    } else {
+        date = '';
     }
     
     let url = buildImageUrl(item);
-    // 如果 URL 是必应图片，添加分辨率参数
     if (url.includes('/th?id=') && !url.includes('&w=')) {
         url = `${url}&w=480&h=270`;
     }
@@ -83,7 +89,6 @@ async function loadChinaHistory(reset: boolean = true) {
     return
   }
 
-  // 首次加载：获取全部数据
   if (state.chinaAllData.length === 0) {
     state.isFetching = true
     try {
@@ -100,10 +105,16 @@ async function loadChinaHistory(reset: boolean = true) {
         return;
       }
 
-      state.chinaAllData = data.map((item: any) => transformHistoryItem(item))
-        .filter(item => item.url);
+      // ========== 转换数据后按日期排序（最新的在前） ==========
+      state.chinaAllData = data
+        .map((item: any) => transformHistoryItem(item))
+        .filter(item => item.url && item.date)
+        .sort((a, b) => b.date.localeCompare(a.date));  // 按日期降序
 
       console.log(`📊 总数据量: ${state.chinaAllData.length} 条`)
+      console.log(`📅 最新日期: ${state.chinaAllData[0]?.date}`)
+      console.log(`📅 最旧日期: ${state.chinaAllData[state.chinaAllData.length - 1]?.date}`)
+      
       state.isFetching = false
     } catch (error) {
       console.error('加载中国区汇总失败:', error)
