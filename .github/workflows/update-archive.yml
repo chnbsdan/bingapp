@@ -26,6 +26,10 @@ jobs:
         env:
           API_ENDPOINT: ${{ vars.API_ENDPOINT }}
 
+      # ========== 新增步骤：转换 data.json 格式（一次性，之后会跳过） ==========
+      - name: Convert data.json format
+        run: node scripts/convert-data-format.mjs
+
       # ========== 新增步骤：追加中国区数据到 archive/data.json ==========
       - name: Append China data to data.json
         run: node scripts/append-china-data.mjs
