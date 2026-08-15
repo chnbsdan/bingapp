@@ -19,6 +19,11 @@ export default defineNuxtConfig({
   ],
 
   nitro: {
+    // ========== 关键修改：将 archive 目录复制到 public ==========
+    publicAssets: [
+      { baseURL: '/', dir: 'public' },
+      { baseURL: '/archive', dir: 'archive' },  // 新增
+    ],
     serverAssets: [{
       baseName: 'archive',
       dir: resolve(cwd(), 'archive'),
