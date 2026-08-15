@@ -46,20 +46,30 @@ function buildImageUrl(item: any): string {
 }
 
 // ========== 转换历史数据 ==========
-function transformHistoryItem(item: any): BingImageMeta {
-    let date = item.startdate || '';
-    if (date.includes('-')) {
-        // 已经是 YYYY-MM-DD
-    } else if (date.length === 8) {
-        date = `${date.slice(0, 4)}-${date.slice(4, 6)}-${date.slice(6, 8)}`;
-    } else {
-        date = '';
+function transformHistoryItem(item: any): BingImageMeta | null {
+    // 必须有 startdate
+    if (!item.startdate) {
+        return null;
     }
     
+    // 日期格式转换：YYYYMMDD -> YYYY-MM-DD
+    let date = item.startdate;
+    if (date.length === 8) {
+        date = `${date.slice(0, 4)}-${date.slice(4, 6)}-${date.slice(6, 8)}`;
+    } else if (!date.includes('-')) {
+        // 既不是 8位 也不是 YYYY-MM-DD，跳过
+        return null;
+    }
+    
+    // 必须有 urlbase 或 url 或 thumb
     let url = buildImageUrl(item);
-    // ========== 修复：只添加一次参数 ==========
-    if (url.includes('/th?id=') && !url.includes('&w=')) {
-        url = `${url}&w=480&h=270`;
+    if (!url) {
+        return null;
+    }
+    
+    // 添加缩略图参数（400x240）
+    if (url.includes('/th?id=') && !url.includes('&w=400')) {
+        url = `${url}&w=400&h=240`;
     }
     
     return {
@@ -103,14 +113,28 @@ async function loadChinaHistory(reset: boolean = true) {
         return;
       }
 
-      state.chinaAllData = data
-        .map((item: any) => transformHistoryItem(item))
-        .filter(item => item.url && item.date)
-        .sort((a, b) => b.date.localeCompare(a.date));
+      // 打印原始数据前3条，检查日期格式
+      console.log('📋 原始数据前3条:', data.slice(0, 3).map((d: any) => d.startdate));
 
-      console.log(`📊 总数据量: ${state.chinaAllData.length} 条`)
-      console.log(`📅 最新日期: ${state.chinaAllData[0]?.date}`)
-      console.log(`📅 最旧日期: ${state.chinaAllData[state.chinaAllData.length - 1]?.date}`)
+      // 转换数据，过滤掉无效条目
+      const converted = data
+        .map((item: any) => transformHistoryItem(item))
+        .filter((item): item is BingImageMeta => item !== null);
+
+      console.log(`📊 有效数据: ${converted.length} / ${data.length} 条`);
+
+      // 按日期降序排序（最新的在前）
+      state.chinaAllData = converted.sort((a, b) => b.date.localeCompare(a.date));
+
+      if (state.chinaAllData.length === 0) {
+        console.log('📭 没有有效数据');
+        state.chinaHasMore = false;
+        state.isFetching = false;
+        return;
+      }
+
+      console.log(`📅 最新日期: ${state.chinaAllData[0].date}`)
+      console.log(`📅 最旧日期: ${state.chinaAllData[state.chinaAllData.length - 1].date}`)
       
       state.isFetching = false
     } catch (error) {
@@ -138,6 +162,11 @@ async function loadChinaHistory(reset: boolean = true) {
   state.chinaHasMore = state.chinaDisplayCount < state.chinaAllData.length
 
   console.log(`📚 已显示: ${state.chinaDisplayCount} / ${state.chinaAllData.length} 条`)
+  // 打印当前显示的最新日期
+  if (state.imageMap.size > 0) {
+    const keys = Array.from(state.imageMap.keys()).sort();
+    console.log(`📅 当前显示最新: ${keys[keys.length - 1]}`);
+  }
 }
 
 function resetImages() {
