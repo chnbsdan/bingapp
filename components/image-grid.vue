@@ -9,10 +9,8 @@ const images = computed(() => {
   return [...imageMap.value.values()].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 })
 
-// 判断是否为中国区汇总
 const isChinaHistory = computed(() => mkt.value === 'zh-CN-history')
 
-// 加载数据
 async function loadData() {
   resetImages()
   if (isChinaHistory.value) {
@@ -22,16 +20,13 @@ async function loadData() {
   }
 }
 
-// 初始加载
 await loadData()
 
-// 监听市场变化
 watch(() => mkt.value, loadData)
 
-// 滚动加载更多（仅对非历史数据有效）
 onMounted(() => {
   useIntersectionObserver(loadMoreRef, async (entries) => {
-    if (isChinaHistory.value) return // 历史数据不滚动加载
+    if (isChinaHistory.value) return
     entries.forEach(async (entry) => {
       if (entry.isIntersecting && !isFetching.value) {
         await loadImages({ idx: images.value.length, count: 30, mkt: mkt.value })
@@ -43,7 +38,6 @@ onMounted(() => {
 
 <template>
   <section class="mx-1 flex-1 md:mx-4">
-    <!-- 新增：显示数据统计信息 -->
     <div v-if="isChinaHistory && images.length > 0" class="mb-3 text-sm text-gray-500">
       📚 共 {{ images.length }} 张壁纸（2010年12月31日至今）
     </div>
