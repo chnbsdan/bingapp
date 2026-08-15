@@ -1,17 +1,35 @@
-// composables/images.ts - loadChinaHistory 函数
+// composables/images.ts
+import type { BingImageMeta } from '~/types'
+
+const state = reactive({
+  hasMore: true,
+  isFetching: false,
+  imageMap: new Map<string, BingImageMeta>(),
+})
+
+async function loadImages(query: { idx: number, count: number, mkt: string }) {
+  if (state.isFetching || !state.hasMore)
+    return
+
+  state.isFetching = true
+  const images = await $fetch('/api/images', { query })
+  state.isFetching = false
+  state.hasMore = images.length >= query.count - 2
+  images.forEach(image => state.imageMap.set(image.date, image))
+}
+
+// 加载中国区汇总数据
 async function loadChinaHistory() {
   if (state.isFetching) return
 
   state.isFetching = true
   try {
-    // 请求 public/data/data.json
     const response = await fetch('/data/data.json')
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`)
     }
     const data = await response.json()
 
-    // data 是数组格式
     if (!Array.isArray(data) || data.length === 0) {
       console.log('📭 没有中国区历史数据');
       state.imageMap = new Map();
@@ -51,5 +69,39 @@ async function loadChinaHistory() {
     state.hasMore = false;
   } finally {
     state.isFetching = false;
+  }
+}
+
+function resetImages() {
+  state.imageMap = new Map()
+  state.hasMore = true
+  state.isFetching = false
+}
+
+async function getImageByKey(date: string, mkt: string) {
+  if (!date)
+    return null
+
+  if (state.imageMap.has(date)) {
+    return state.imageMap.get(date)!
+  } else {
+    try {
+      const image = await $fetch('/api/image', { query: { date, mkt } })
+      state.imageMap.set(date, image)
+      return image
+    } catch {
+      return null
+    }
+  }
+}
+
+// ========== 确保这里有导出 ==========
+export function useImages() {
+  return {
+    ...toRefs(state),
+    loadImages,
+    loadChinaHistory,
+    resetImages,
+    getImageByKey,
   }
 }
