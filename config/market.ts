@@ -1,3 +1,5 @@
+// config/market.ts
+
 export type Market =
   | 'de-DE'
   | 'en-CA'
@@ -8,6 +10,7 @@ export type Market =
   | 'it-IT'
   | 'ja-JP'
   | 'zh-CN'
+  | 'zh-CN-history'  // 新增：中国区汇总
 
 interface MarketConfig {
   lang: Market
@@ -110,6 +113,17 @@ export const markets: MarketConfig[] = [
     description: '每日一图，带你领略世界之美',
     keywords: '壁纸, 壁纸下载, 壁纸免费下载, 必应壁纸, 必应壁纸下载, 必应壁纸免费下载, 4k 壁纸, 4k 壁纸下载, 4k 壁纸免费下载, 高清壁纸, 高清壁纸下载, 高清壁纸免费下载',
     startDate: '2016-03-05 00:00:00',
+  },
+  // ========== 新增：中国区汇总 ==========
+  {
+    lang: 'zh-CN-history',
+    flag: '📚',
+    name: '中国区汇总',
+    offset: +8 * 60,
+    title: '中国区壁纸汇总',
+    description: '2010年至今全部中国区壁纸',
+    keywords: '中国区壁纸, 历史壁纸, 必应壁纸汇总, 必应壁纸历史',
+    startDate: '2010-12-30 00:00:00',
   },
 ]
 
