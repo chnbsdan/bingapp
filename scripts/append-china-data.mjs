@@ -52,22 +52,17 @@ async function main() {
         const { key, data } = result;
         console.log(`📥 中国区日期: ${key}`);
 
-        // 读取现有数据 - 如果文件不存在或读取失败，使用空对象
+        // 读取现有数据
         let existingData = {};
-        let fileExists = false;
-        
         if (fs.existsSync(dataFilePath)) {
             try {
                 const content = fs.readFileSync(dataFilePath, 'utf-8');
                 if (content && content.trim()) {
                     existingData = JSON.parse(content);
-                    fileExists = true;
                     console.log(`📂 现有数据包含 ${Object.keys(existingData).length} 天`);
-                } else {
-                    console.log('⚠️ data.json 为空，将创建新数据');
                 }
             } catch (e) {
-                console.log(`⚠️ 读取文件失败: ${e.message}，将创建新数据`);
+                console.log(`⚠️ 读取文件失败: ${e.message}`);
             }
         } else {
             console.log('📂 data.json 不存在，将创建新文件');
@@ -91,9 +86,9 @@ async function main() {
                 sortedData[k] = existingData[k];
             });
 
-        // 写入文件
-        fs.writeFileSync(dataFilePath, JSON.stringify(sortedData, null, 2));
-        console.log(`💾 已保存，总计 ${Object.keys(sortedData).length} 天`);
+        // ========== 关键修改：压缩格式写入（不传空格参数） ==========
+        fs.writeFileSync(dataFilePath, JSON.stringify(sortedData));
+        console.log(`💾 已保存（压缩格式），总计 ${Object.keys(sortedData).length} 天`);
 
     } catch (error) {
         console.error('❌ 更新失败:', error);
