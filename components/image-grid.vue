@@ -6,7 +6,7 @@ import { useMarket } from '~/composables/market'
 const { mkt } = useMarket()
 
 const loadMoreRef = ref<HTMLElement>()
-const { isFetching, imageMap, loadImages, loadChinaHistory, resetImages } = useImages()
+const { isFetching, imageMap, loadImages, loadChinaHistory, resetImages, hasMore, chinaHasMore } = useImages()
 
 const images = computed(() => {
   return [...imageMap.value.values()].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -17,9 +17,17 @@ const isChinaHistory = computed(() => mkt.value === 'zh-CN-history')
 async function loadData() {
   resetImages()
   if (isChinaHistory.value) {
-    await loadChinaHistory()
+    await loadChinaHistory(true)
   } else {
     await loadImages({ idx: 0, count: 30, mkt: mkt.value })
+  }
+}
+
+async function loadMore() {
+  if (isChinaHistory.value) {
+    await loadChinaHistory(false)
+  } else {
+    await loadImages({ idx: images.value.length, count: 30, mkt: mkt.value })
   }
 }
 
@@ -29,10 +37,12 @@ watch(() => mkt.value, loadData)
 
 onMounted(() => {
   useIntersectionObserver(loadMoreRef, async (entries) => {
-    if (isChinaHistory.value) return
     entries.forEach(async (entry) => {
       if (entry.isIntersecting && !isFetching.value) {
-        await loadImages({ idx: images.value.length, count: 30, mkt: mkt.value })
+        const more = isChinaHistory.value ? chinaHasMore.value : hasMore.value
+        if (more) {
+          await loadMore()
+        }
       }
     })
   })
@@ -42,7 +52,7 @@ onMounted(() => {
 <template>
   <section class="mx-1 flex-1 md:mx-4">
     <div v-if="isChinaHistory && images.length > 0" class="mb-3 text-sm text-gray-500">
-      📚 共 {{ images.length }} 张壁纸（2010年12月31日至今）
+      📚 已显示 {{ images.length }} 张
     </div>
 
     <div class="grid grid-cols-2 gap-2 lg:grid-cols-5 md:grid-cols-3">
@@ -58,10 +68,16 @@ onMounted(() => {
     <div ref="loadMoreRef" class="grid place-items-center py-4">
       <span v-show="isFetching" class="i-system-uicons-loader mt-1 animate-spin text-3xl md:mt-2" />
       <span
-        v-if="!isFetching && isChinaHistory && images.length > 0"
+        v-if="!isFetching && isChinaHistory && images.length > 0 && !chinaHasMore"
         class="mt-2 text-sm text-gray-400"
       >
         ─ 已全部加载（共 {{ images.length }} 张） ─
+      </span>
+      <span
+        v-if="!isFetching && !isChinaHistory && images.length > 0 && !hasMore"
+        class="mt-2 text-sm text-gray-400"
+      >
+        ─ 已全部加载 ─
       </span>
     </div>
   </section>
