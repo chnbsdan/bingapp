@@ -1,6 +1,5 @@
 <!-- components/image-grid.vue -->
 <script setup lang="ts">
-// ========== 确保导入所有需要的函数 ==========
 import { useImages } from '~/composables/images'
 import { useMarket } from '~/composables/market'
 
