@@ -1,45 +1,38 @@
 // server/api/china-history.get.ts
-import { readFile } from 'node:fs/promises';
-import path from 'node:path';
-
 export default defineEventHandler(async () => {
-    // 使用绝对路径，确保在不同环境下都能找到文件
-    const dataPath = path.resolve(process.cwd(), 'archive', 'data.json');
-
     try {
-        // 1. 检查文件是否存在
-        await fs.access(dataPath);
-        console.log('✅ data.json 文件存在');
-
-        // 2. 读取文件
-        const data = await readFile(dataPath, 'utf-8');
-        console.log(`📄 文件大小: ${data.length} 字节`);
-
-        // 3. 解析 JSON
-        const parsed = JSON.parse(data);
-        console.log(`✅ JSON 解析成功，数据类型: ${Array.isArray(parsed) ? '数组' : typeof parsed}`);
-
-        // 4. 处理数据
-        let result = parsed;
-        if (!Array.isArray(parsed)) {
-            result = Object.keys(parsed)
-                .sort((a, b) => b.localeCompare(a))
-                .map(key => ({
-                    startdate: parsed[key].startdate || key,
-                    urlbase: parsed[key].urlbase || parsed[key].url || '',
-                    title: parsed[key].title || '',
-                    copyright: parsed[key].copyright || '',
-                }));
+        // 使用 useStorage 读取 serverAssets 中的文件
+        const data = await useStorage('assets:server').getItem('archive/data.json');
+        
+        if (!data) {
+            console.error('❌ archive/data.json 不存在');
+            return [];
         }
 
-        console.log(`✅ 成功返回 ${result.length} 条数据`);
+        // data 是字符串，需要解析
+        const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+        
+        // 如果是数组，直接返回
+        if (Array.isArray(parsed)) {
+            console.log(`✅ 返回 ${parsed.length} 条数据`);
+            return parsed;
+        }
+        
+        // 如果是对象，转换为数组
+        const result = Object.keys(parsed)
+            .sort((a, b) => b.localeCompare(a))
+            .map(key => ({
+                startdate: parsed[key].startdate || key,
+                urlbase: parsed[key].urlbase || parsed[key].url || '',
+                title: parsed[key].title || '',
+                copyright: parsed[key].copyright || '',
+            }));
+        
+        console.log(`✅ 返回 ${result.length} 条数据`);
         return result;
 
     } catch (error) {
-        // 详细记录错误信息
-        console.error('❌ 读取中国历史数据失败:', error.message);
-        console.error('   文件路径:', dataPath);
-        console.error('   错误堆栈:', error.stack);
-        return []; // 返回空数组
+        console.error('❌ 读取失败:', error.message);
+        return [];
     }
 });
