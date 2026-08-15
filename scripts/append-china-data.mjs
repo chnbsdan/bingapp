@@ -21,12 +21,21 @@ async function fetchChinaData() {
     const allData = await response.json();
     console.log(`📊 API返回 ${allData.length} 条数据`);
 
-    // 打印所有数据的关键信息，方便调试
+    // 打印第一条完整数据结构，查看所有字段
+    if (allData.length > 0) {
+        console.log('📋 第一条数据结构:', JSON.stringify(allData[0], null, 2));
+    }
+
+    // 遍历打印所有数据的 lang 和日期字段
     allData.forEach((item, index) => {
-        console.log(`  [${index}] lang: ${item.lang}, startdate: ${item.startdate}, title: ${item.title?.substring(0, 10)}...`);
+        // 尝试找出日期字段 - 可能是 date, startdate, enddate, 或其他
+        const dateFields = Object.keys(item).filter(key => 
+            key.includes('date') || key.includes('Date') || key === 'startdate' || key === 'enddate'
+        );
+        console.log(`  [${index}] lang: ${item.lang}, 日期字段: ${dateFields.join(', ')}, 值: ${dateFields.map(f => item[f]).join(', ')}`);
     });
 
-    // 修改：通过 lang 字段查找中国区数据
+    // 通过 lang 字段查找中国区数据
     const chinaData = allData.find(item => item.lang === 'zh-CN');
 
     if (!chinaData) {
@@ -34,7 +43,7 @@ async function fetchChinaData() {
         return null;
     }
 
-    console.log(`✅ 找到中国区数据: ${chinaData.startdate}`);
+    console.log('✅ 找到中国区数据，完整内容:', JSON.stringify(chinaData, null, 2));
     return chinaData;
 }
 
@@ -48,8 +57,25 @@ async function main() {
             process.exit(0);
         }
 
-        const startdate = newData.startdate;
-        console.log(`📥 获取到中国区数据: ${startdate}`);
+        // 找出正确的日期字段
+        const dateKeys = Object.keys(newData).filter(key => 
+            key.includes('date') || key.includes('Date') || key === 'startdate' || key === 'enddate'
+        );
+        
+        let startdate = newData.startdate || newData.date || newData.enddate;
+        // 如果日期是 Date 对象，转换为字符串
+        if (startdate instanceof Date) {
+            startdate = startdate.toISOString().slice(0, 10).replace(/-/g, '');
+        }
+
+        console.log(`📥 获取到中国区数据，日期字段: ${dateKeys.join(', ')}, 值: ${startdate}`);
+
+        // 如果还是没有日期，使用当前日期
+        if (!startdate) {
+            const now = new Date();
+            startdate = now.toISOString().slice(0, 10).replace(/-/g, '');
+            console.log(`⚠️ 未找到日期字段，使用当前日期: ${startdate}`);
+        }
 
         // 读取现有 data.json
         let existingData = {};
