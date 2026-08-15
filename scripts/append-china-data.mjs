@@ -27,7 +27,16 @@ async function fetchChinaData() {
         return null;
     }
 
-    return chinaData;
+    // 将 API 返回的数据转换为与历史数据一致的格式
+    // API: { url: "...", date: "2026-08-15", lang: "zh-CN", title: "...", copyright: "..." }
+    // 历史: { startdate: "20260815", urlbase: "...", title: "...", copyright: "..." }
+    const dateStr = chinaData.date.replace(/-/g, '');
+    return {
+        startdate: dateStr,
+        urlbase: chinaData.url,
+        title: chinaData.title,
+        copyright: chinaData.copyright,
+    };
 }
 
 async function main() {
@@ -40,29 +49,33 @@ async function main() {
             process.exit(0);
         }
 
-        // 获取日期并转换为 YYYYMMDD 格式
-        let dateStr = newData.date;
-        if (dateStr) {
-            dateStr = dateStr.replace(/-/g, '');
-        } else {
-            const now = new Date();
-            dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
-            console.log(`⚠️ 未找到日期字段，使用当前日期: ${dateStr}`);
-        }
-
+        const dateStr = newData.startdate;
         console.log(`📥 中国区日期: ${dateStr}`);
 
-        // 读取现有 data.json（数组格式）
+        // ========== 关键修复：正确读取现有 data.json ==========
         let existingData = [];
         if (fs.existsSync(dataFilePath)) {
-            const content = fs.readFileSync(dataFilePath, 'utf-8');
-            existingData = JSON.parse(content);
-            // 确保是数组
-            if (!Array.isArray(existingData)) {
-                console.log('⚠️ data.json 不是数组格式，将重新创建');
+            try {
+                const content = fs.readFileSync(dataFilePath, 'utf-8');
+                // 确保内容不为空
+                if (content.trim()) {
+                    const parsed = JSON.parse(content);
+                    // 确保是数组
+                    if (Array.isArray(parsed)) {
+                        existingData = parsed;
+                        console.log(`📂 成功读取现有数据，包含 ${existingData.length} 条记录`);
+                    } else {
+                        console.log('⚠️ data.json 不是数组格式，将重新创建');
+                        existingData = [];
+                    }
+                } else {
+                    console.log('⚠️ data.json 为空，将重新创建');
+                    existingData = [];
+                }
+            } catch (parseError) {
+                console.error('⚠️ 解析 data.json 失败，将重新创建:', parseError.message);
                 existingData = [];
             }
-            console.log(`📂 现有数据包含 ${existingData.length} 条记录`);
         } else {
             console.log('📂 data.json 不存在，将创建新文件');
         }
@@ -74,16 +87,8 @@ async function main() {
             process.exit(0);
         }
 
-        // 构建要保存的数据 - 与历史数据格式完全一致
-        const dataToSave = {
-            startdate: dateStr,
-            urlbase: newData.url,
-            title: newData.title,
-            copyright: newData.copyright,
-        };
-
-        // 追加到数组
-        existingData.push(dataToSave);
+        // 追加新数据
+        existingData.push(newData);
         console.log(`✅ 新增: ${dateStr}`);
 
         // 按 startdate 排序（最新的在前）
