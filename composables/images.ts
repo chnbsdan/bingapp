@@ -18,16 +18,21 @@ async function loadImages(query: { idx: number, count: number, mkt: string }) {
   images.forEach(image => state.imageMap.set(image.date, image))
 }
 
-// ========== 修改：通过 API 获取中国区汇总数据 ==========
+// ========== 修改：直接请求静态文件 ==========
 async function loadChinaHistory() {
   if (state.isFetching) return
 
   state.isFetching = true
   try {
-    // 改为调用新创建的 API 接口
-    const data = await $fetch('/api/china-history')
-    
-    if (!data || !Array.isArray(data) || data.length === 0) {
+    // 直接请求静态文件（通过 publicAssets 复制到 public）
+    const response = await fetch('/archive/data.json')
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`)
+    }
+    const data = await response.json()
+
+    // data 是数组格式: [{ startdate, urlbase, title, copyright }, ...]
+    if (!Array.isArray(data) || data.length === 0) {
       console.log('📭 没有中国区历史数据');
       state.imageMap = new Map();
       state.hasMore = false;
@@ -79,7 +84,8 @@ function resetImages() {
 }
 
 async function getImageByKey(date: string, mkt: string) {
-  if (!date) return null
+  if (!date)
+    return null
 
   if (state.imageMap.has(date)) {
     return state.imageMap.get(date)!
