@@ -6,7 +6,7 @@ import { useMarket } from '~/composables/market'
 const { mkt } = useMarket()
 
 const loadMoreRef = ref<HTMLElement>()
-const { isFetching, imageMap, loadImages, loadChinaHistory, resetImages, hasMore, chinaHasMore } = useImages()
+const { isFetching, imageMap, loadImages, loadChinaHistory, resetImages, hasMore } = useImages()
 
 const images = computed(() => {
   return [...imageMap.value.values()].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -17,17 +17,9 @@ const isChinaHistory = computed(() => mkt.value === 'zh-CN-history')
 async function loadData() {
   resetImages()
   if (isChinaHistory.value) {
-    await loadChinaHistory(true)
+    await loadChinaHistory()
   } else {
     await loadImages({ idx: 0, count: 30, mkt: mkt.value })
-  }
-}
-
-async function loadMore() {
-  if (isChinaHistory.value) {
-    await loadChinaHistory(false)
-  } else {
-    await loadImages({ idx: images.value.length, count: 30, mkt: mkt.value })
   }
 }
 
@@ -35,14 +27,12 @@ await loadData()
 
 watch(() => mkt.value, loadData)
 
+// 滚动加载（只有九个区需要，中国区已经一次性加载完）
 onMounted(() => {
   useIntersectionObserver(loadMoreRef, async (entries) => {
     entries.forEach(async (entry) => {
-      if (entry.isIntersecting && !isFetching.value) {
-        const more = isChinaHistory.value ? chinaHasMore.value : hasMore.value
-        if (more) {
-          await loadMore()
-        }
+      if (entry.isIntersecting && !isFetching.value && !isChinaHistory.value && hasMore.value) {
+        await loadImages({ idx: images.value.length, count: 30, mkt: mkt.value })
       }
     })
   })
@@ -52,7 +42,7 @@ onMounted(() => {
 <template>
   <section class="mx-1 flex-1 md:mx-4">
     <div v-if="isChinaHistory && images.length > 0" class="mb-3 text-sm text-gray-500">
-      📚 已显示 {{ images.length }} 张
+      📚 共 {{ images.length }} 张壁纸（2010年1月1日至今）
     </div>
 
     <div class="grid grid-cols-2 gap-2 lg:grid-cols-5 md:grid-cols-3">
@@ -68,7 +58,7 @@ onMounted(() => {
     <div ref="loadMoreRef" class="grid place-items-center py-4">
       <span v-show="isFetching" class="i-system-uicons-loader mt-1 animate-spin text-3xl md:mt-2" />
       <span
-        v-if="!isFetching && isChinaHistory && images.length > 0 && !chinaHasMore"
+        v-if="!isFetching && isChinaHistory && images.length > 0"
         class="mt-2 text-sm text-gray-400"
       >
         ─ 已全部加载（共 {{ images.length }} 张） ─
