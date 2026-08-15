@@ -1,3 +1,4 @@
+# .github/workflows/update-archive.yml
 name: Update Archive
 
 on:
@@ -18,10 +19,20 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 18
+
+      # ========== 原有步骤：更新按月数据 ==========
       - name: Fetch Updates from API
         run: node scripts/update-archive.mjs
         env:
           API_ENDPOINT: ${{ vars.API_ENDPOINT }}
+
+      # ========== 新增步骤：追加中国区数据到 archive/data.json ==========
+      - name: Append China data to data.json
+        run: node scripts/append-china-data.mjs
+        env:
+          API_ENDPOINT: ${{ vars.API_ENDPOINT }}
+
+      # ========== 提交所有更改 ==========
       - name: Commit Updates to Github
         if: success()
         env:
