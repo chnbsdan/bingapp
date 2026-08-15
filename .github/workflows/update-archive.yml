@@ -20,23 +20,23 @@ jobs:
         with:
           node-version: 18
 
-      # ========== 原有步骤：更新按月数据 ==========
+      # 原有：更新按月数据
       - name: Fetch Updates from API
         run: node scripts/update-archive.mjs
         env:
           API_ENDPOINT: ${{ vars.API_ENDPOINT }}
 
-      # ========== 新增步骤：转换 data.json 格式（一次性，之后会跳过） ==========
-      - name: Convert data.json format
-        run: node scripts/convert-data-format.mjs
+      # ========== 删除这个步骤 ==========
+      # - name: Convert data.json format
+      #   run: node scripts/convert-data-format.mjs
 
-      # ========== 新增步骤：追加中国区数据到 archive/data.json ==========
+      # 追加中国区数据到 archive/data.json（数组格式）
       - name: Append China data to data.json
         run: node scripts/append-china-data.mjs
         env:
           API_ENDPOINT: ${{ vars.API_ENDPOINT }}
 
-      # ========== 提交所有更改 ==========
+      # 提交
       - name: Commit Updates to Github
         if: success()
         env:
