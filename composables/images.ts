@@ -5,13 +5,11 @@ const state = reactive({
   hasMore: true,
   isFetching: false,
   imageMap: new Map<string, BingImageMeta>(),
-  // ========== 中国区汇总专用状态 ==========
-  chinaAllData: [] as BingImageMeta[],  // 存储所有已转换的数据
-  chinaDisplayCount: 30,                // 当前显示数量
+  chinaAllData: [] as BingImageMeta[],
+  chinaDisplayCount: 30,
   chinaHasMore: true,
 })
 
-// ========== 九个区：保持不变 ==========
 async function loadImages(query: { idx: number, count: number, mkt: string }) {
   if (state.isFetching || !state.hasMore)
     return
@@ -23,23 +21,56 @@ async function loadImages(query: { idx: number, count: number, mkt: string }) {
   images.forEach(image => state.imageMap.set(image.date, image))
 }
 
-// ========== 工具函数：构建图片 URL ==========
+// ========== 构建图片 URL ==========
 function buildImageUrl(item: any): string {
-    if (item.thumb) return item.thumb;
-    if (item.url) return item.url;
+    if (item.thumb) {
+        if (item.thumb.startsWith('/')) {
+            return `https://www.bing.com${item.thumb}`;
+        }
+        return item.thumb;
+    }
+    if (item.url) {
+        return item.url;
+    }
     if (item.urlbase) {
         let url = item.urlbase;
-        if (url.startsWith('/')) return `https://www.bing.com${url}`;
-        if (url.startsWith('http')) return url;
+        if (url.startsWith('/')) {
+            return `https://www.bing.com${url}`;
+        }
+        if (url.startsWith('http')) {
+            return url;
+        }
+        return `https://www.bing.com/${url}`;
     }
     return '';
 }
 
-// ========== 中国区汇总：一次性加载全部，滚动分批显示 ==========
+// ========== 转换历史数据 ==========
+function transformHistoryItem(item: any): BingImageMeta {
+    let date = item.startdate || '';
+    if (date && date.length === 8) {
+        date = `${date.slice(0, 4)}-${date.slice(4, 6)}-${date.slice(6, 8)}`;
+    }
+    
+    let url = buildImageUrl(item);
+    // 如果 URL 是必应图片，添加分辨率参数
+    if (url.includes('/th?id=') && !url.includes('&w=')) {
+        url = `${url}&w=480&h=270`;
+    }
+    
+    return {
+        url: url,
+        date: date,
+        title: item.title || '无标题',
+        copyright: item.copyright || '',
+        copyrightlink: item.copyrightlink || '',
+    };
+}
+
+// ========== 中国区汇总：分页加载 ==========
 async function loadChinaHistory(reset: boolean = true) {
   if (state.isFetching) return
   
-  // 重置时清空
   if (reset) {
     state.imageMap = new Map()
     state.chinaAllData = []
@@ -47,7 +78,6 @@ async function loadChinaHistory(reset: boolean = true) {
     state.chinaHasMore = true
   }
 
-  // 如果已加载完所有数据
   if (!state.chinaHasMore && !reset) {
     console.log('📭 已全部显示');
     return
@@ -70,20 +100,8 @@ async function loadChinaHistory(reset: boolean = true) {
         return;
       }
 
-      // 转换全部数据
-      state.chinaAllData = data.map((item: any) => {
-        let date = item.startdate || '';
-        if (date && date.length === 8) {
-          date = `${date.slice(0, 4)}-${date.slice(4, 6)}-${date.slice(6, 8)}`;
-        }
-        return {
-          url: buildImageUrl(item),
-          date: date,
-          title: item.title || '无标题',
-          copyright: item.copyright || '',
-          copyrightlink: item.copyrightlink || '',
-        };
-      }).filter(item => item.url); // 过滤掉没有 URL 的
+      state.chinaAllData = data.map((item: any) => transformHistoryItem(item))
+        .filter(item => item.url);
 
       console.log(`📊 总数据量: ${state.chinaAllData.length} 条`)
       state.isFetching = false
@@ -95,18 +113,15 @@ async function loadChinaHistory(reset: boolean = true) {
     }
   }
 
-  // 如果已经全部显示
   if (state.chinaDisplayCount >= state.chinaAllData.length) {
     state.chinaHasMore = false
     console.log('📭 已全部显示');
     return
   }
 
-  // 计算本次要显示的数量（增加30条）
   const newCount = Math.min(state.chinaDisplayCount + 30, state.chinaAllData.length)
   const batch = state.chinaAllData.slice(state.chinaDisplayCount, newCount)
 
-  // 添加到 imageMap
   batch.forEach(image => {
     state.imageMap.set(image.date, image)
   })
