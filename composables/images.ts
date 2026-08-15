@@ -18,17 +18,22 @@ async function loadImages(query: { idx: number, count: number, mkt: string }) {
   images.forEach(image => state.imageMap.set(image.date, image))
 }
 
-// ========== 构建图片 URL ==========
+// ========== 工具函数：构建图片 URL ==========
 function buildImageUrl(item: any): string {
+    // 1. 优先使用 thumb（缩略图，历史数据专用）
     if (item.thumb) {
         if (item.thumb.startsWith('/')) {
             return `https://www.bing.com${item.thumb}`;
         }
         return item.thumb;
     }
+
+    // 2. 使用 url 字段
     if (item.url) {
         return item.url;
     }
+
+    // 3. 处理 urlbase 字段
     if (item.urlbase) {
         let url = item.urlbase;
         if (url.startsWith('/')) {
@@ -39,6 +44,8 @@ function buildImageUrl(item: any): string {
         }
         return `https://www.bing.com/${url}`;
     }
+
+    // 4. 都没有，返回空字符串
     return '';
 }
 
@@ -56,7 +63,7 @@ function transformHistoryItem(item: any): BingImageMeta | null {
     let url = buildImageUrl(item);
     if (!url) return null;
     
-    // 添加缩略图参数
+    // 添加缩略图参数（400x240）
     if (url.includes('/th?id=') && !url.includes('&w=')) {
         url = `${url}&w=400&h=240`;
     }
@@ -70,23 +77,19 @@ function transformHistoryItem(item: any): BingImageMeta | null {
     };
 }
 
-// ========== 中国区汇总：一次性加载全部 ==========
+// ========== 加载中国区汇总数据 ==========
 async function loadChinaHistory() {
   if (state.isFetching) return
 
   state.isFetching = true
   try {
-    const response = await fetch('/data/data.json')
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`)
-    }
-    const data = await response.json()
-
+    // 通过 API 接口获取数据
+    const data = await $fetch('/api/data')
+    
     if (!Array.isArray(data) || data.length === 0) {
       console.log('📭 没有中国区历史数据');
       state.imageMap = new Map();
       state.hasMore = false;
-      state.isFetching = false;
       return;
     }
 
