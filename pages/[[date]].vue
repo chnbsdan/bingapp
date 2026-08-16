@@ -6,7 +6,7 @@ const { y: scrollY, x: scrollX } = useWindowScroll({ behavior: 'smooth' })
 const route = useRoute()
 const dateParam = route.params.date as string || ''
 
-// 判断参数类型
+// ★★★ 核心修改：判断参数类型，增加对纯数字日期的识别
 const dateType = computed(() => {
   if (!dateParam) return 'default'
   
@@ -16,14 +16,18 @@ const dateType = computed(() => {
   // 匹配 YYYYMM (6位数字) - 年月
   if (/^\d{6}$/.test(dateParam)) return 'month'
   
+  // ★★★ 匹配 YYYYMMDD (8位数字) - 日期（纯数字格式）
+  if (/^\d{8}$/.test(dateParam)) return 'day'
+  
   // 匹配 YYYY-MM-DD (带横杠的日期) - 日期
   if (/^\d{4}-\d{2}-\d{2}$/.test(dateParam)) return 'day'
   
   return 'default'
 })
 
-// 标准化日期参数（8位数字转为带横杠格式）
+// ★★★ 核心修改：标准化日期参数（统一转为 YYYY-MM-DD 格式）
 const normalizedDate = computed(() => {
+  // 如果是8位纯数字日期，转为带横杠格式
   if (dateType.value === 'day' && /^\d{8}$/.test(dateParam)) {
     return `${dateParam.slice(0, 4)}-${dateParam.slice(4, 6)}-${dateParam.slice(6, 8)}`
   }
