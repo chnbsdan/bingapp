@@ -8,7 +8,7 @@ const props = defineProps<{
 }>()
 
 const loadMoreRef = ref<HTMLElement>()
-const { isFetching, imageMap, loadImages, resetImages } = useImages()
+const { isFetching, imageMap, loadImages, resetImages, loadImagesByYearMonth } = useImages()
 
 // 核心：根据日期类型过滤图片
 const images = computed(() => {
@@ -41,13 +41,23 @@ const images = computed(() => {
   return allImages
 })
 
-// 根据日期类型决定加载策略
+// ★★★ 核心修改：根据日期类型决定加载策略
 async function initialLoad() {
-  if (props.dateType === 'year' || props.dateType === 'month') {
-    // 年月搜索需要加载全年数据（最多366张）
+  // 1. 如果是“日”搜索，加载对应月份的完整数据（最多31张）
+  if (props.dateType === 'day' && props.dateParam) {
+    // 从 YYYY-MM-DD 中提取 YYYYMM
+    const yearMonth = props.dateParam.replace(/-/g, '').slice(0, 6)
+    const year = yearMonth.slice(0, 4)
+    const month = yearMonth.slice(4, 6)
+    // 调用专门加载年月的方法，确保该月所有数据都被加载
+    await loadImagesByYearMonth(year, month, mkt.value)
+  } 
+  // 2. 如果是“年”或“月”搜索，加载全年数据（最多366张）
+  else if (props.dateType === 'year' || props.dateType === 'month') {
     await loadImages({ idx: 0, count: 366, mkt: mkt.value })
-  } else {
-    // 默认或日搜索加载最近30张
+  } 
+  // 3. 默认（首页）加载最近30张
+  else {
     await loadImages({ idx: 0, count: 30, mkt: mkt.value })
   }
 }
@@ -58,6 +68,9 @@ onMounted(async () => {
   useIntersectionObserver(loadMoreRef, (entries) => {
     entries.forEach(async (entry) => {
       if (entry.isIntersecting) {
+        // 对于“日”搜索，数据已一次性加载完，无需再加载更多
+        if (props.dateType === 'day') return
+        
         // 年月搜索一次性加载完所有数据
         const count = (props.dateType === 'year' || props.dateType === 'month') ? 366 : 30
         await loadImages({ idx: images.value.length, count, mkt: mkt.value })
@@ -74,49 +87,3 @@ watch(() => [props.dateParam, props.dateType], async () => {
   await initialLoad()
 })
 </script>
-
-<template>
-  <section class="mx-1 flex-1 md:mx-4">
-    <!-- 显示当前搜索的标题 -->
-    <div v-if="dateParam && dateType !== 'default'" class="mb-4 text-center">
-      <h2 class="text-2xl font-bold">
-        <span v-if="dateType === 'year'">{{ dateParam }} 年全部壁纸</span>
-        <span v-else-if="dateType === 'month'">{{ dateParam.slice(0,4) }} 年 {{ dateParam.slice(4,6) }} 月壁纸</span>
-        <span v-else-if="dateType === 'day'">{{ dateParam }} 壁纸</span>
-      </h2>
-      <p class="text-sm op-50">共 {{ images.length }} 张</p>
-    </div>
-
-    <!-- 空状态提示 -->
-    <div v-if="images.length === 0 && dateParam && dateType !== 'default'" class="text-center py-12">
-      <div class="i-system-uicons-search text-6xl op-30" />
-      <p class="mt-4 text-lg op-50">
-        <span v-if="dateType === 'year'">未找到 {{ dateParam }} 年的壁纸数据</span>
-        <span v-else-if="dateType === 'month'">未找到 {{ dateParam.slice(0,4) }} 年 {{ dateParam.slice(4,6) }} 月的壁纸数据</span>
-        <span v-else-if="dateType === 'day'">未找到 {{ dateParam }} 的壁纸数据</span>
-      </p>
-      <p class="text-sm op-30 mt-2">请尝试其他日期或返回首页</p>
-    </div>
-
-    <!-- 图片网格 -->
-    <div v-else class="grid grid-cols-2 gap-2 lg:grid-cols-5 md:grid-cols-3">
-      <nuxt-link 
-        v-for="image in images" 
-        :key="image.url" 
-        :to="{ params: { date: image.date }, query: { mkt } }"
-      >
-        <image-card :image="image" />
-      </nuxt-link>
-    </div>
-
-    <!-- 日搜索单张图片的提示 -->
-    <div v-if="dateType === 'day' && images.length === 1" class="mt-4 text-center text-sm op-50">
-      点击图片查看大图
-    </div>
-
-    <!-- 加载更多 -->
-    <div v-if="images.length > 0" ref="loadMoreRef" class="grid place-items-center">
-      <span v-show="isFetching" class="i-system-uicons-loader mt-1 animate-spin text-3xl md:mt-2" />
-    </div>
-  </section>
-</template>
