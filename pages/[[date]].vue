@@ -2,6 +2,38 @@
 const { height: windowHeight, width: windowWidth } = useWindowSize()
 const { y: scrollY, x: scrollX } = useWindowScroll({ behavior: 'smooth' })
 
+// 解析路由参数
+const route = useRoute()
+const dateParam = route.params.date as string || ''
+
+// 判断参数类型
+const dateType = computed(() => {
+  if (!dateParam) return 'default'
+  
+  // 匹配 YYYY (4位数字) - 年份
+  if (/^\d{4}$/.test(dateParam)) return 'year'
+  
+  // 匹配 YYYYMM (6位数字) - 年月
+  if (/^\d{6}$/.test(dateParam)) return 'month'
+  
+  // 匹配 YYYY-MM-DD (带横杠的日期) - 日期
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateParam)) return 'day'
+  
+  return 'default'
+})
+
+// 标准化日期参数（8位数字转为带横杠格式）
+const normalizedDate = computed(() => {
+  if (dateType.value === 'day' && /^\d{8}$/.test(dateParam)) {
+    return `${dateParam.slice(0, 4)}-${dateParam.slice(4, 6)}-${dateParam.slice(6, 8)}`
+  }
+  return dateParam
+})
+
+// 提供给子组件使用
+provide('dateParam', normalizedDate)
+provide('dateType', dateType)
+
 provide('isMobile', computed(() => {
   return windowWidth.value < 730
 }))
@@ -77,7 +109,10 @@ useCustomSeoMeta({
       </div>
     </header>
 
-    <image-grid />
+    <!-- 传递日期类型和参数给图片网格 -->
+    <image-grid :date-type="dateType" :date-param="normalizedDate" />
+    
+    <!-- ImagePreview 保持不变，它自己处理日期的显示 -->
     <image-preview />
 
     <footer class="py-4 text-center bg-base">
