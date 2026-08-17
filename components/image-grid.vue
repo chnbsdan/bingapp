@@ -15,24 +15,20 @@ const images = computed(() => {
   let allImages = [...imageMap.value.values()]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
-  // 如果没有日期参数，返回全部
   if (!props.dateParam || props.dateType === 'default') {
     return allImages
   }
 
-  // 按年过滤 (YYYY)
   if (props.dateType === 'year') {
     const year = props.dateParam
     return allImages.filter(img => img.date.startsWith(year))
   }
 
-  // 按月过滤 (YYYYMM)
   if (props.dateType === 'month') {
     const yearMonth = props.dateParam
     return allImages.filter(img => img.date.replace(/-/g, '').startsWith(yearMonth))
   }
 
-  // 按日过滤 (YYYY-MM-DD)
   if (props.dateType === 'day') {
     const date = props.dateParam
     return allImages.filter(img => img.date === date)
@@ -41,24 +37,34 @@ const images = computed(() => {
   return allImages
 })
 
-// ★★★ 核心修改：将 count 从 366 改为 9999
-async function initialLoad() {
-  if (props.dateType === 'year' || props.dateType === 'month') {
-    // 年月搜索加载所有数据
-    await loadImages({ idx: 0, count: 9999, mkt: mkt.value })
-  } else {
-    // 默认或日搜索加载最近30张
-    await loadImages({ idx: 0, count: 30, mkt: mkt.value })
+// ★★★ 提取为独立函数，方便多处调用
+async function loadData() {
+  try {
+    if (props.dateType === 'year' || props.dateType === 'month') {
+      await loadImages({ idx: 0, count: 9999, mkt: mkt.value })
+    } else {
+      await loadImages({ idx: 0, count: 30, mkt: mkt.value })
+    }
+  } catch (error) {
+    console.error('数据加载失败:', error)
   }
 }
 
-await initialLoad()
+// ★★★ 在 setup 中加载（服务端和客户端都会执行）
+await loadData()
 
+// ★★★ 核心修复：在 onMounted 中再次确保数据加载
 onMounted(async () => {
+  // 如果数据为空（比如 SSR 阶段未加载），重新加载
+  if (imageMap.value.size === 0) {
+    await loadData()
+  }
+
+  // 滚动加载更多
   useIntersectionObserver(loadMoreRef, (entries) => {
     entries.forEach(async (entry) => {
       if (entry.isIntersecting) {
-        // ★★★ 核心修改：将 count 从 366 改为 9999
+        if (props.dateType === 'day') return
         const count = (props.dateType === 'year' || props.dateType === 'month') ? 9999 : 30
         await loadImages({ idx: images.value.length, count, mkt: mkt.value })
       }
@@ -68,10 +74,9 @@ onMounted(async () => {
 
 watch(() => mkt.value, resetImages)
 
-// 当日期参数变化时重新加载
 watch(() => [props.dateParam, props.dateType], async () => {
   resetImages()
-  await initialLoad()
+  await loadData()
 })
 </script>
 
