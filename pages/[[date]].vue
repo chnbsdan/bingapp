@@ -2,32 +2,29 @@
 const { height: windowHeight, width: windowWidth } = useWindowSize()
 const { y: scrollY, x: scrollX } = useWindowScroll({ behavior: 'smooth' })
 
-// 解析路由参数
 const route = useRoute()
+const router = useRouter()
 const dateParam = route.params.date as string || ''
+
+// ★★★ 生成一个基于路由参数的 key，用于强制重新渲染
+const routerKey = computed(() => {
+  return route.fullPath
+})
 
 // 判断参数类型
 const dateType = computed(() => {
   if (!dateParam) return 'default'
   
-  // 匹配 YYYY (4位数字) - 年份
   if (/^\d{4}$/.test(dateParam)) return 'year'
-  
-  // 匹配 YYYYMM (6位数字) - 年月
   if (/^\d{6}$/.test(dateParam)) return 'month'
-  
-  // 匹配 YYYYMMDD (8位数字) - 日期（纯数字格式）
   if (/^\d{8}$/.test(dateParam)) return 'day'
-  
-  // 匹配 YYYY-MM-DD (带横杠的日期) - 日期
   if (/^\d{4}-\d{2}-\d{2}$/.test(dateParam)) return 'day'
   
   return 'default'
 })
 
-// 标准化日期参数（统一转为 YYYY-MM-DD 格式）
+// 标准化日期参数
 const normalizedDate = computed(() => {
-  // 如果是8位纯数字日期，转为带横杠格式
   if (dateType.value === 'day' && /^\d{8}$/.test(dateParam)) {
     return `${dateParam.slice(0, 4)}-${dateParam.slice(4, 6)}-${dateParam.slice(6, 8)}`
   }
@@ -113,13 +110,9 @@ useCustomSeoMeta({
       </div>
     </header>
 
-    <!-- ★★★ 核心修改：使用 ClientOnly + :key 强制刷新 ★★★ -->
-    <ClientOnly>
-      <image-grid 
-        :key="route.fullPath" 
-        :date-type="dateType" 
-        :date-param="normalizedDate" 
-      />
+    <!-- ★★★ 使用 :key 强制重新渲染整个 ClientOnly 块 ★★★ -->
+    <ClientOnly :key="routerKey">
+      <image-grid :date-type="dateType" :date-param="normalizedDate" />
       <image-preview />
     </ClientOnly>
 
