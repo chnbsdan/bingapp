@@ -10,6 +10,9 @@ const props = defineProps<{
 const loadMoreRef = ref<HTMLElement>()
 const { isFetching, imageMap, loadImages, resetImages } = useImages()
 
+// ★★★ 新增：本地加载状态
+const isLoading = ref(true)
+
 // 核心：根据日期类型过滤图片
 const images = computed(() => {
   let allImages = [...imageMap.value.values()]
@@ -37,8 +40,9 @@ const images = computed(() => {
   return allImages
 })
 
-// ★★★ 提取为独立函数，方便多处调用
+// ★★★ 数据加载函数
 async function loadData() {
+  isLoading.value = true
   try {
     if (props.dateType === 'year' || props.dateType === 'month') {
       await loadImages({ idx: 0, count: 9999, mkt: mkt.value })
@@ -47,15 +51,17 @@ async function loadData() {
     }
   } catch (error) {
     console.error('数据加载失败:', error)
+  } finally {
+    isLoading.value = false
   }
 }
 
-// ★★★ 在 setup 中加载（服务端和客户端都会执行）
+// ★★★ 在 setup 中加载
 await loadData()
 
-// ★★★ 核心修复：在 onMounted 中再次确保数据加载
+// ★★★ onMounted 中再次确保加载
 onMounted(async () => {
-  // 如果数据为空（比如 SSR 阶段未加载），重新加载
+  // 如果数据为空，重新加载
   if (imageMap.value.size === 0) {
     await loadData()
   }
@@ -82,8 +88,14 @@ watch(() => [props.dateParam, props.dateType], async () => {
 
 <template>
   <section class="mx-1 flex-1 md:mx-4">
+    <!-- ★★★ 加载状态提示 -->
+    <div v-if="isLoading" class="text-center py-12">
+      <span class="i-system-uicons-loader animate-spin text-3xl" />
+      <p class="mt-2 text-sm op-50">加载中...</p>
+    </div>
+
     <!-- 显示当前搜索的标题 -->
-    <div v-if="dateParam && dateType !== 'default'" class="mb-4 text-center">
+    <div v-else-if="dateParam && dateType !== 'default'" class="mb-4 text-center">
       <h2 class="text-2xl font-bold">
         <span v-if="dateType === 'year'">{{ dateParam }} 年全部壁纸</span>
         <span v-else-if="dateType === 'month'">{{ dateParam.slice(0,4) }} 年 {{ dateParam.slice(4,6) }} 月壁纸</span>
@@ -93,7 +105,7 @@ watch(() => [props.dateParam, props.dateType], async () => {
     </div>
 
     <!-- 空状态提示 -->
-    <div v-if="images.length === 0 && dateParam && dateType !== 'default'" class="text-center py-12">
+    <div v-else-if="images.length === 0 && dateParam && dateType !== 'default'" class="text-center py-12">
       <div class="i-system-uicons-search text-6xl op-30" />
       <p class="mt-4 text-lg op-50">
         <span v-if="dateType === 'year'">未找到 {{ dateParam }} 年的壁纸数据</span>
