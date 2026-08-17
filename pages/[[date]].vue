@@ -6,7 +6,7 @@ const { y: scrollY, x: scrollX } = useWindowScroll({ behavior: 'smooth' })
 const route = useRoute()
 const dateParam = route.params.date as string || ''
 
-// ★★★ 核心修改：判断参数类型，增加对纯数字日期的识别
+// 判断参数类型
 const dateType = computed(() => {
   if (!dateParam) return 'default'
   
@@ -16,7 +16,7 @@ const dateType = computed(() => {
   // 匹配 YYYYMM (6位数字) - 年月
   if (/^\d{6}$/.test(dateParam)) return 'month'
   
-  // ★★★ 匹配 YYYYMMDD (8位数字) - 日期（纯数字格式）
+  // 匹配 YYYYMMDD (8位数字) - 日期（纯数字格式）
   if (/^\d{8}$/.test(dateParam)) return 'day'
   
   // 匹配 YYYY-MM-DD (带横杠的日期) - 日期
@@ -25,7 +25,7 @@ const dateType = computed(() => {
   return 'default'
 })
 
-// ★★★ 核心修改：标准化日期参数（统一转为 YYYY-MM-DD 格式）
+// 标准化日期参数（统一转为 YYYY-MM-DD 格式）
 const normalizedDate = computed(() => {
   // 如果是8位纯数字日期，转为带横杠格式
   if (dateType.value === 'day' && /^\d{8}$/.test(dateParam)) {
@@ -113,11 +113,11 @@ useCustomSeoMeta({
       </div>
     </header>
 
-    <!-- 传递日期类型和参数给图片网格 -->
-    <image-grid :date-type="dateType" :date-param="normalizedDate" />
-    
-    <!-- ImagePreview 保持不变，它自己处理日期的显示 -->
-    <image-preview />
+    <!-- ★★★ 核心修改：使用 ClientOnly 确保只在客户端渲染，解决 Hydration 不匹配问题 ★★★ -->
+    <ClientOnly>
+      <image-grid :date-type="dateType" :date-param="normalizedDate" />
+      <image-preview />
+    </ClientOnly>
 
     <footer class="py-4 text-center bg-base">
       <span class="text-xs op-50">© {{ new Date().getFullYear() }} · 由小史先生维护 | All pictures on this site are from Bing search</span>
