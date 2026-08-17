@@ -7,11 +7,17 @@ const isMobile = inject('isMobile', ref(false))
 
 const thumbnail = computed(() => {
   const { url } = props.image
-  return url.includes('/th?id=')
-    ? isMobile.value
+  if (!url) return ''
+  
+  // 必应官方链接：使用缩略图
+  if (url.includes('/th?id=')) {
+    return isMobile.value
       ? url.replace('1920x1080', '768x1280')
       : `${url}&w=480&h=270`
-    : url
+  }
+  
+  // 个人链接（2018年8月以前）：通过自己的代理加载
+  return `/api/proxy/image?url=${encodeURIComponent(url)}`
 })
 </script>
 
