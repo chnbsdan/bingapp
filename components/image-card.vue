@@ -7,11 +7,19 @@ const isMobile = inject('isMobile', ref(false))
 
 const thumbnail = computed(() => {
   const { url } = props.image
-  return url.includes('/th?id=')
-    ? isMobile.value
+  if (!url) return ''
+  
+  // ★★★ 如果是必应官方链接，使用缩略图
+  if (url.includes('/th?id=')) {
+    return isMobile.value
       ? url.replace('1920x1080', '768x1280')
       : `${url}&w=480&h=270`
-    : url
+  }
+  
+  // ★★★ 新增：如果是个人链接（2018年8月以前），通过第三方服务压缩
+  // 使用 wsrv.nl 免费图片压缩服务
+  // 参数：w=480 宽度，h=270 高度，fit=cover 裁剪模式
+  return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=480&h=270&fit=cover`
 })
 </script>
 
