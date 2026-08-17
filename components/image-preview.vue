@@ -63,7 +63,22 @@ const previewUrl = computed(() => {
     : url
 })
 
+// ★★★ 修改：使用 localStorage 持久化状态
+const STORAGE_KEY = 'preview_meta_visible'
 const imageMetaVisible = ref(true)
+
+// ★★★ 在组件挂载时读取保存的状态
+onMounted(() => {
+  const saved = localStorage.getItem(STORAGE_KEY)
+  if (saved !== null) {
+    imageMetaVisible.value = saved === 'true'
+  }
+})
+
+// ★★★ 状态变化时保存到 localStorage
+watch(imageMetaVisible, (val) => {
+  localStorage.setItem(STORAGE_KEY, String(val))
+})
 
 function toggleImageMetaVisible() {
   imageMetaVisible.value = !imageMetaVisible.value
