@@ -113,9 +113,13 @@ useCustomSeoMeta({
       </div>
     </header>
 
-    <!-- ★★★ 核心修改：使用 ClientOnly 确保只在客户端渲染，解决 Hydration 不匹配问题 ★★★ -->
+    <!-- ★★★ 核心修改：使用 ClientOnly + :key 强制刷新 ★★★ -->
     <ClientOnly>
-      <image-grid :date-type="dateType" :date-param="normalizedDate" />
+      <image-grid 
+        :key="route.fullPath" 
+        :date-type="dateType" 
+        :date-param="normalizedDate" 
+      />
       <image-preview />
     </ClientOnly>
 
