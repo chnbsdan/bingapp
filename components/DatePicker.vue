@@ -43,26 +43,27 @@ const doSearch = (val: string) => {
   
   const trimmed = val.trim()
   const currentMkt = route.query.mkt || 'zh-CN'
+  let targetUrl = ''
   
   // 统一跳转到 /{输入值}，由页面根据格式判断类型
   if (isYear(trimmed) || isYearMonth(trimmed)) {
-    router.push(`/${trimmed}?mkt=${currentMkt}`)
-    return
-  }
-  
-  if (isFullDate(trimmed)) {
-    router.push(`/${trimmed}?mkt=${currentMkt}`)
-    return
-  }
-  
-  if (isDateNoSep(trimmed)) {
+    targetUrl = `/${trimmed}?mkt=${currentMkt}`
+  } else if (isFullDate(trimmed)) {
+    targetUrl = `/${trimmed}?mkt=${currentMkt}`
+  } else if (isDateNoSep(trimmed)) {
     const d = `${trimmed.slice(0, 4)}-${trimmed.slice(4, 6)}-${trimmed.slice(6, 8)}`
-    router.push(`/${d}?mkt=${currentMkt}`)
-    return
+    targetUrl = `/${d}?mkt=${currentMkt}`
+  } else {
+    targetUrl = `/${trimmed}?mkt=${currentMkt}`
   }
   
-  // 其他格式尝试作为日期
-  router.push(`/${trimmed}?mkt=${currentMkt}`)
+  // ★★★ 核心修改：使用 window.location.href 强制刷新
+  // 对于年份和月份，使用强制刷新；对于日期，使用 router.push（SPA跳转）
+  if (isYear(trimmed) || isYearMonth(trimmed)) {
+    window.location.href = targetUrl
+  } else {
+    router.push(targetUrl)
+  }
 }
 
 const onInput = (event: Event) => {
