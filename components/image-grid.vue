@@ -41,11 +41,11 @@ const images = computed(() => {
   return allImages
 })
 
-// 根据日期类型决定加载策略
+// ★★★ 核心修改：将 count 从 366 改为 9999
 async function initialLoad() {
   if (props.dateType === 'year' || props.dateType === 'month') {
-    // 年月搜索需要加载全年数据（最多366张）
-    await loadImages({ idx: 0, count: 366, mkt: mkt.value })
+    // 年月搜索加载所有数据
+    await loadImages({ idx: 0, count: 9999, mkt: mkt.value })
   } else {
     // 默认或日搜索加载最近30张
     await loadImages({ idx: 0, count: 30, mkt: mkt.value })
@@ -58,8 +58,8 @@ onMounted(async () => {
   useIntersectionObserver(loadMoreRef, (entries) => {
     entries.forEach(async (entry) => {
       if (entry.isIntersecting) {
-        // 年月搜索一次性加载完所有数据
-        const count = (props.dateType === 'year' || props.dateType === 'month') ? 366 : 30
+        // ★★★ 核心修改：将 count 从 366 改为 9999
+        const count = (props.dateType === 'year' || props.dateType === 'month') ? 9999 : 30
         await loadImages({ idx: images.value.length, count, mkt: mkt.value })
       }
     })
