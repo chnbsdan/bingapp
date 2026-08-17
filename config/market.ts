@@ -1,5 +1,3 @@
-// config/market.ts
-
 export type Market =
   | 'de-DE'
   | 'en-CA'
@@ -10,7 +8,9 @@ export type Market =
   | 'it-IT'
   | 'ja-JP'
   | 'zh-CN'
-  | 'ko-KR'  // 新增韩国
+  | 'pt-BR'   // ★★★ 新增：巴西葡萄牙语
+  | 'es-ES'   // ★★★ 新增：西班牙语
+  | 'en-XA'   // ★★★ 新增：世界其他地区
 
 interface MarketConfig {
   lang: Market
@@ -24,6 +24,7 @@ interface MarketConfig {
 }
 
 export const markets: MarketConfig[] = [
+  // ... 您现有的 9 个地区保持不变 ...
   {
     lang: 'de-DE',
     flag: '🇩🇪',
@@ -112,17 +113,39 @@ export const markets: MarketConfig[] = [
     title: '必应壁纸',
     description: '每日一图，带你领略世界之美',
     keywords: '壁纸, 壁纸下载, 壁纸免费下载, 必应壁纸, 必应壁纸下载, 必应壁纸免费下载, 4k 壁纸, 4k 壁纸下载, 4k 壁纸免费下载, 高清壁纸, 高清壁纸下载, 高清壁纸免费下载',
-    startDate: '2016-03-05 00:00:00',
+    startDate: '2010-01-01 00:00:00',
   },
-  // ========== 新增：韩国 ==========
+  // ★★★ 新增：BR - 巴西葡萄牙语
   {
-    lang: 'ko-KR',
-    flag: '🇰🇷',
-    name: '한국어',
-    offset: +9 * 60,
-    title: '빙 배경 화면',
-    description: '한 번에 한 장씩 세계를 탐험하세요',
-    keywords: '배경 화면, 배경 화면 다운로드, 무료 배경 화면 다운로드, 빙 배경 화면, 빙 배경 화면 다운로드, 무료 빙 배경 화면 다운로드, 4k 배경 화면, 4k 배경 화면 다운로드, 무료 4k 배경 화면 다운로드, HD 배경 화면, HD 배경 화면 다운로드, 무료 HD 배경 화면 다운로드',
+    lang: 'pt-BR',
+    flag: '🇧🇷',
+    name: 'Português (Brasil)',
+    offset: -3 * 60,
+    title: 'Papel de parede Bing',
+    description: 'Explore o mundo uma foto de cada vez',
+    keywords: 'Papel de parede, Baixar papel de parede, Baixar papel de parede grátis, Papel de parede Bing, Baixar papel de parede Bing, Baixar papel de parede Bing grátis, Papel de parede 4k, Baixar papel de parede 4k, Baixar papel de parede 4k grátis, Papel de parede HD, Baixar papel de parede HD, Baixar papel de parede HD grátis',
+    startDate: '2022-04-28 00:00:00',
+  },
+  // ★★★ 新增：ES - 西班牙语
+  {
+    lang: 'es-ES',
+    flag: '🇪🇸',
+    name: 'Español',
+    offset: +1 * 60,
+    title: 'Fondo de pantalla Bing',
+    description: 'Explora el mundo una foto a la vez',
+    keywords: 'Fondo de pantalla, Descargar fondo de pantalla, Descargar fondo de pantalla gratis, Fondo de pantalla Bing, Descargar fondo de pantalla Bing, Descargar fondo de pantalla Bing gratis, Fondo de pantalla 4k, Descargar fondo de pantalla 4k, Descargar fondo de pantalla 4k gratis, Fondo de pantalla HD, Descargar fondo de pantalla HD, Descargar fondo de pantalla HD gratis',
+    startDate: '2022-04-28 00:00:00',
+  },
+  // ★★★ 新增：ROW - 世界其他地区（英语）
+  {
+    lang: 'en-XA',
+    flag: '🌍',
+    name: 'English (ROW)',
+    offset: 0,
+    title: 'Bing Wallpaper',
+    description: 'Explore the world one photo at a time',
+    keywords: 'Wallpaper, Wallpaper Download, Free Wallpaper Download, Bing Wallpaper, Bing Wallpaper Download, Free Bing Wallpaper Download, 4k Wallpaper, 4k Wallpaper Download, Free 4k Wallpaper Download, HD Wallpaper, HD Wallpaper Download, Free HD Wallpaper Download',
     startDate: '2022-04-28 00:00:00',
   },
 ]
