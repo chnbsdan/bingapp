@@ -104,7 +104,7 @@ useCustomSeoMeta({
         <div class="rounded-full p-2 text-2xl hover:bg-black:10">
           <nuxt-link
             class="i-system-uicons-document block text-inherit" target="_blank"
-            to="https://bing.api.hangdn.com/api"
+            to="https://app.hangdn.net/api"
           />
         </div>
       </div>
